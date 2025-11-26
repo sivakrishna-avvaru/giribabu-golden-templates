@@ -27,8 +27,8 @@ spec:
         port: 
           type: string
           title: ServerPortExposition
-          enum: [5000, 8080, 8000]
-          default: 5000
+          enum: ["5000", "8080", "8000"]
+          default: "5000"
         
 
     - title: Repository Location
