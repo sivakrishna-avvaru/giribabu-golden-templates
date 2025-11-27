@@ -28,8 +28,8 @@ spec:
           title: S3 Bucket Name
         instancetype:
           type: string
-          title: Select the compute requirement
-          description: compute of the VM
+          title: Compute Type
+          description: Size of VM
 
   steps:
     - id: fetch
@@ -44,45 +44,58 @@ spec:
           s3_bucket_name: ${{ parameters.s3_bucket_name }}
           instancetype: ${{ parameters.instancetype }}
 
+    # ----------------------------------------------------
+    # CHECK IF REPO EXISTS USING GITHUB API (BUILT-IN)
+    # ----------------------------------------------------
     - id: checkRepo
       name: Check if Repo Exists
-      action: github:repo:exists
+      action: fetch:plain
       input:
-        owner: ramannkhanna2
-        repo: ${{ parameters.project_name }}-infra
+        method: GET
+        url: https://api.github.com/repos/ramannkhanna2/${{ parameters.project_name }}-infra
+        headers:
+          Authorization: Bearer ${{ secrets.githubToken }}
 
+    # ----------------------------------------------------
+    # CREATE REPO (FIRST RUN ONLY)
+    # ----------------------------------------------------
     - id: createRepo
-      name: Create GitHub Repository (only if it doesn't exist)
-      if: ${{ steps.checkRepo.output.exists == false }}
+      name: Create GitHub Repository
+      if: ${{ steps.checkRepo.output.statusCode == 404 }}
       action: github:repo:create
       input:
         repoUrl: github.com?owner=ramannkhanna2&repo=${{ parameters.project_name }}-infra
-        description: "Terraform Infra Repo"
         visibility: private
 
+    # ----------------------------------------------------
+    # PUBLISH INITIAL COMMIT (FIRST RUN ONLY)
+    # ----------------------------------------------------
     - id: publishInitial
-      name: Push initial code (only on first run)
-      if: ${{ steps.checkRepo.output.exists == false }}
+      name: Push Initial Code
+      if: ${{ steps.checkRepo.output.statusCode == 404 }}
       action: publish:github
       input:
         repoUrl: github.com?owner=ramannkhanna2&repo=${{ parameters.project_name }}-infra
 
+    # ----------------------------------------------------
+    # CREATE PR (SUBSEQUENT RUNS)
+    # ----------------------------------------------------
     - id: publishPr
-      name: Create PR on existing repo
-      if: ${{ steps.checkRepo.output.exists == true }}
+      name: Create Pull Request (Repo Exists)
+      if: ${{ steps.checkRepo.output.statusCode == 200 }}
       action: publish:github:pull-request
       input:
         repoUrl: github.com?owner=ramannkhanna2&repo=${{ parameters.project_name }}-infra
         branchName: "scaffolder/${{ parameters.project_name }}-${{ now | date('YYYYMMDDHHmmss') }}"
-        title: "Infra Update for ${{ parameters.project_name }}"
-        description: "Automatic scaffolder update."
+        title: "Infra Update: ${{ parameters.project_name }}"
+        description: "Automated scaffolder update."
 
   output:
-  links:
-    - title: GitHub Repository (Initial)
-      if: ${{ steps.checkRepo.output.exists == false }}
-      url: ${{ steps.publishInitial.output.remoteUrl }}
+    links:
+      - title: GitHub Repository (Initial)
+        if: ${{ steps.checkRepo.output.statusCode == 404 }}
+        url: ${{ steps.publishInitial.output.remoteUrl }}
 
-    - title: GitHub Repository (PR)
-      if: ${{ steps.checkRepo.output.exists == true }}
-      url: ${{ steps.publishPr.output.remoteUrl }}
+      - title: GitHub Repository (PR)
+        if: ${{ steps.checkRepo.output.statusCode == 200 }}
+        url: ${{ steps.publishPr.output.remoteUrl }}
