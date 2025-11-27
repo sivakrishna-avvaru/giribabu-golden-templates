@@ -57,7 +57,7 @@ spec:
 
 
 # In prod , we add a condition in prev steps if the github repo already exists or not than creates a PR for every change ... 
-    - id: publishPr
+    - id: publish
       name: Create PR on existing repo
       action: publish:github:pull-request
       input:
