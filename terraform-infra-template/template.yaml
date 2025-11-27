@@ -78,7 +78,11 @@ spec:
         description: "Automatic scaffolder update."
 
   output:
-    links:
-      - title: GitHub Repository
-        url: >-
-          ${{ steps.publishInitial.output.remoteUrl || steps.publishPr.output.remoteUrl }}
+  links:
+    - title: GitHub Repository (Initial)
+      if: ${{ steps.checkRepo.output.exists == false }}
+      url: ${{ steps.publishInitial.output.remoteUrl }}
+
+    - title: GitHub Repository (PR)
+      if: ${{ steps.checkRepo.output.exists == true }}
+      url: ${{ steps.publishPr.output.remoteUrl }}
