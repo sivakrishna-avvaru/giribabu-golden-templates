@@ -56,7 +56,7 @@ spec:
       name: Publish to GitHub
       action: publish:github
       input:
-        repoUrl: github.com?owner=ramannkhanna2&repo=${{ parameters.project_name }}-infra
+        repoUrl: github.com?owner=sivakrishna-avvaru&repo=${{ parameters.project_name }}-infra
         repoVisibility: public
     - id: wait
       name: Wait for GitHub to catch up
